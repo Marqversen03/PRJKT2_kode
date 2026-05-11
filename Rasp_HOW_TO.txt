@@ -1,0 +1,56 @@
+
+
+QUICKY STARTY
+---------------------------------------
+Koden til Rasp kan være 123 
+
+
+1) Tilslutning
+- Sæt strøm til via USB-C og stik til LCD-skærmen.
+- Tilslut tastatur og mus.
+- Tilslut Arduino til en USB-port.
+    Bruger normalt de venstre to til tastatur og mus 
+    og højre top til arduino- tror ikke der er en forskel men idk
+
+2) Åbn projektfiler //behøves ikke//
+- Start programmet Geany (Menu -> Programming).
+- Hvis filerne ikke vises i Geany 
+    - tjek din hjemme-mappe /home/anton tror jeg
+
+3) Kør programmet
+Åbn en terminal og kør:
+
+    make run
+
+vis ikke kan finde make run check at terminalen er rigtig sted 
+cd /home/anton eller hvad end path er.
+
+Hvis du får en fejl, er Arduino sandsynligvis ikke tilsluttet, eller tty-enheden har ændret navn.
+
+4) USB-enhedsfejl efter frakobling
+Hvis Arduino fjernes mens programmet kører, kan der opstå en USB-fejl. Ret i uart.cpp linjen:
+
+constexpr const char* UART_DEVICE = "/dev/ttyACM0";
+
+til f.eks.: 
+
+constexpr const char* UART_DEVICE = "/dev/ttyACM1"; 
+
+Du kan også liste enhederne for at se det aktuelle navn:
+
+ls /dev/ttyACM*
+
+også erstatte path med den listede.
+
+5) Stop programmet
+- Stop programmet i terminalen med Ctrl C.
+
+6) Knap-/clean()-problem
+- Hvis knap fejler, skyldes det ofte, at clean() skal kaldes. har skrevet dårlig kode
+så det gør den aldrig. man kan manuel kalde den men tbh lettest løsning pt reboot raspberry pi.
+
+7) Adgangskode / kode
+- Koden til Rasp kan være 123 
+
+
+Ellers bare ring: 60511988
