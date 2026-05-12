@@ -5,18 +5,17 @@
  *  Author: josef
  */ 
 
-
 #ifndef TIMER5_H_
 #define TIMER5_H_
 
 #include <avr/io.h>
 
-// Global variabel
+// Time tracking
 extern volatile uint16_t seconds;
 extern volatile uint8_t Check_temp;
 extern volatile uint8_t Check_Pos;
 
-// Initialiseringsfunktion
-void timer5_init();
+// Init
+void timer5_init(void);
 
-#endif /* TIMER5_H_ */
+#endif

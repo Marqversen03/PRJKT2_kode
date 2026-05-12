@@ -5,20 +5,20 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 
+// Frame markers
 #define START_BYTE 0xAA
-#define END_BYTE 0xBB
-#define Data_SIZE 64
+#define END_BYTE   0xBB
 
-extern volatile uint8_t UART_Started;
-extern volatile uint8_t Index;
-extern volatile uint8_t Data_Array[Data_SIZE];
+#define BUFFER_SIZE 10
+
+// Shared variables (simple version)
+extern volatile uint8_t Data_Array[BUFFER_SIZE];
 extern volatile uint8_t FrameReady;
-extern volatile uint8_t FrameLength;
-extern volatile uint8_t OverflowFlag;
 
+// Functions
 void UART0_Init(void);
-void UART0_RST(void);
 void SendChar(char c);
 void SendString(const char* str);
+void SendTemp(void);
 
 #endif

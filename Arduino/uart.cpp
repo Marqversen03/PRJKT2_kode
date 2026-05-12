@@ -75,4 +75,3 @@ ISR(USART0_RX_vect)
         Uart_avail = 0; //overflow
     }
 }
-``
