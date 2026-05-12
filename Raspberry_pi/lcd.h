@@ -13,7 +13,7 @@
 #define LCD_Enable 0x04
 #define LCD_Degree 0xDF
 
-#define Bit_mask 0xDF
+#define Bit_mask 0xF0
 
 //location
 #define Linje1 0x80
