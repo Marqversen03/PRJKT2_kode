@@ -7,11 +7,12 @@
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 
+MenuSelect menu = MenuSelect::Chair;
+
 void lcd_write(int fd, uint8_t data) {
     data |= LCD_Backlight;  // backlight ON
     write(fd, &data, 1);    // 1 = char count
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
-
 }
 
 void pulse(int fd, uint8_t data) {
@@ -64,7 +65,7 @@ int lcd_init() {
 // -- LAYOUT --
 
 void Menu_chair(int fd, int temp) {
-    send_byte(fd, Clear, COMMAND);
+    send_byte(fd, LCD_Clear, COMMAND);
     
     std::string string_temp = std::to_string(temp);
 
@@ -108,7 +109,7 @@ int Next_menu_chair(int fd,int chair) {
 }
 
 void Menu_State(int fd) {
-    send_byte(fd, Clear, COMMAND);
+    send_byte(fd, LCD_Clear, COMMAND);
 
     lcd_print(fd,"OFF",Linje1);
 

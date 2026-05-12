@@ -41,12 +41,12 @@ int Next_menu_state(int fd,int state);
 
 
 
-MenuSelect menu = MenuSelect::Chair;
 enum class MenuSelect {
     Chair,
     State,
 };
 
+extern MenuSelect menu;
 
 enum ChairState {
     OFF = 0,

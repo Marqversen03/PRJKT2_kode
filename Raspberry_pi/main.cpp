@@ -1,5 +1,5 @@
 #include "button.h"
-#include "fd_LCD.h"
+#include "lcd.h"
 #include "Uart.h"
 
 #include <iostream>
@@ -59,10 +59,10 @@ int main()
 
 while (true)
 {
-        Set = Read_uart(fd_USB);
+        UartResult = Read_uart(fd_USB);
 
-		if (Set == Def_Temp) Menu_chair(fd_LCD, temp);
-		if (Set == Def_Sweep) SET_ALL_LED (fd_USB);
+		if (UartResult == Def_Temp) Menu_chair(fd_LCD, temp);
+		if (UartResult == Def_Sweep) SET_ALL_LED (fd_USB);
 
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));

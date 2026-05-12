@@ -573,7 +573,6 @@ void SendTemp(void)
  314:	1f 92       	push	r1
  316:	0f 92       	push	r0
 
-// ---------------- RECEIVE (ISR) ----------------
 ISR(USART0_RX_vect)
 {
  318:	0f b6       	in	r0, 0x3f	; 63
