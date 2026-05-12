@@ -44,7 +44,6 @@ void SendTemp(void)
 	SendChar(END_BYTE);
 }
 
-// ---------------- RECEIVE (ISR) ----------------
 ISR(USART0_RX_vect)
 {
 	uint8_t data = UDR0;

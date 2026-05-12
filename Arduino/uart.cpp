@@ -2,7 +2,6 @@
 #include "uart.h"
 #include <stdlib.h>
 
-// UART state
 volatile uint8_t Data_Array[BUFFER_SIZE];
 volatile uint8_t FrameReady = 0;
 
@@ -44,7 +43,6 @@ void SendTemp(void)
     SendChar(END_BYTE);
 }
 
-// ---------------- RECEIVE (ISR) ----------------
 ISR(USART0_RX_vect)
 {
     uint8_t data = UDR0;

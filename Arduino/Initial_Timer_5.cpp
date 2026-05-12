@@ -17,7 +17,6 @@ volatile uint8_t femten_min = 0;
 volatile uint8_t Check_temp = 0;
 volatile uint8_t Check_Pos = 0;
 
-// ---------------- INIT ----------------
 void timer5_init(void)
 {
     TCCR5B |= (1 << WGM52);   // CTC mode
@@ -29,7 +28,6 @@ void timer5_init(void)
     sei();
 }
 
-// ---------------- ISR ----------------
 ISR(TIMER5_COMPA_vect)
 {
     seconds++;
