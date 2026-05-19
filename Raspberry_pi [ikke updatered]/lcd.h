@@ -4,63 +4,59 @@
 #include <cstdint>
 #include <string>
 
-// LCD I2C address
 #define LCD_ADDR 0x27
 
-//commands
 #define LCD_Clear 0x01
 #define LCD_Backlight 0x08
 #define LCD_Enable 0x04
 #define LCD_Degree 0xDF
-
 #define Bit_mask 0xF0
 
-//location
 #define Linje1 0x80
 #define Linje2 0xC0
 #define Linje3 0x94
 #define Linje4 0xD4
 
-// init
-int  lcd_init();
+class LCD
+{
+private:
+    int fd;
 
-//writing funktion
-void lcd_write(int fd, uint8_t data);
-void pulse(int fd, uint8_t data);
-void send_byte(int fd, uint8_t val, uint8_t mode);
-void lcd_print(int fd, const std::string&,uint8_t start);
+    void lcd_write(uint8_t data);
+    void pulse(uint8_t data);
+    void send_byte(uint8_t val, uint8_t mode);
 
+public:
+    LCD();
+    ~LCD();
 
-// menu display
-void Menu_chair(int fd, int temp);
-void Menu_State(int fd);
+    bool init();
 
-// select menu display
-int Next_menu_chair(int fd,int chair);
-int Next_menu_state(int fd,int state);
+    void print(const std::string& text, uint8_t start);
 
+    void Menu_chair(int temp);
+    void Menu_State();
 
+    int Next_menu_chair(int chair);
+    int Next_menu_state(int state);
+};
 
 enum class MenuSelect {
     Chair,
     State,
 };
 
-extern MenuSelect menu;
-
 enum ChairState {
-    OFF = 0,
+    None = 0,
+    OFF,
     LOW,
     MID,
     HIGH
 };
-
 
 enum LCDMODE {
     COMMAND = 0,
     DATA = 1
 };
 
-
-
-#endif // LCD_H
+#endif

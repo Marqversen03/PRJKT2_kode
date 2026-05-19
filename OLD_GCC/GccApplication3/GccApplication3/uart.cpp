@@ -8,6 +8,8 @@ volatile uint8_t FrameReady = 0;
 
 static uint8_t index = 0;
 static uint8_t Uart_avail = 0;
+int temp{0};
+
 
 void UART0_Init(void)
 {
@@ -36,7 +38,7 @@ void SendString(const char* str)
 
 void SendTemp(void)
 {
-	int temp = (rand() % 17) + 5;
+	temp += 1;
 
 	SendChar(START_BYTE);
 	SendChar('T');

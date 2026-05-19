@@ -34,7 +34,7 @@ ISR(TIMER5_COMPA_vect)
 {
     seconds++;
 
-    if (seconds % 300 == 0)
+    if (seconds % 10 == 0)
     {
         Check_temp = 1;
     }

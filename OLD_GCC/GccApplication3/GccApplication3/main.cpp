@@ -8,6 +8,7 @@ void Uart();
 
 int main(void)
 {
+	setLed(2, HIGH);
 	pwmInit();
 	UART0_Init();
 	timer5_init();

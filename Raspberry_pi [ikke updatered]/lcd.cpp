@@ -1,150 +1,185 @@
-
 #include "lcd.h"
+
 #include <chrono>
 #include <thread>
+#include <iostream>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 
-MenuSelect menu = MenuSelect::Chair;
+// ----------------------
+// Constructor / Destructor
+// ----------------------
 
-void lcd_write(int fd, uint8_t data) {
-    data |= LCD_Backlight;  // backlight ON
-    write(fd, &data, 1);    // 1 = char count
-    std::this_thread::sleep_for(std::chrono::microseconds(1000));
+LCD::LCD() : fd(-1)
+{
 }
 
-void pulse(int fd, uint8_t data) {
-    lcd_write(fd, data | LCD_Enable);   // EN = 1
-    lcd_write(fd, data & ~LCD_Enable);  // EN = 0
+LCD::~LCD()
+{
+    if (fd >= 0)
+    {
+        close(fd);
+    }
 }
 
-void send_byte(int fd, uint8_t val, uint8_t mode) {
+void LCD::lcd_write(uint8_t data)
+{
+    data |= LCD_Backlight;
+
+    write(fd, &data, 1);
+
+    std::this_thread::sleep_for(
+        std::chrono::microseconds(1000)
+    );
+}
+
+void LCD::pulse(uint8_t data)
+{
+    lcd_write(data | LCD_Enable);
+    lcd_write(data & ~LCD_Enable);
+}
+
+void LCD::send_byte(uint8_t val, uint8_t mode)
+{
     uint8_t high = (val & Bit_mask) | mode;
     uint8_t low  = ((val << 4) & Bit_mask) | mode;
 
-    pulse(fd, high);
-    pulse(fd, low);
+    pulse(high);
+    pulse(low);
 }
 
-void lcd_print(int fd, const std::string& text,uint8_t start) {
-    send_byte(fd, start, COMMAND); // start lokalition
+bool LCD::init()
+{
+    fd = open("/dev/i2c-1", O_RDWR);
 
-    for (char c : text)
-        send_byte(fd, c, DATA);
-}
-
-int lcd_init() {
-    int fd = open("/dev/i2c-1", O_RDWR);
-    if (fd < 0) return -1;
+    if (fd < 0)
+        return false;
 
     ioctl(fd, I2C_SLAVE, LCD_ADDR);
-    
-    std::this_thread::sleep_for(std::chrono::microseconds(50000));
 
-    //4 bit system init
-    pulse(fd, 0x30);    //8-bit init
-    pulse(fd, 0x30);    //8-bit init
-    pulse(fd, 0x30);    //8-bit init
-    pulse(fd, 0x20);    //4-bit init
+    std::this_thread::sleep_for(
+        std::chrono::microseconds(50000)
+    );
 
-    send_byte(fd, 0x28, COMMAND);           // 4-bit, 2-line
-    send_byte(fd, 0x08, COMMAND);           // display ON
-    send_byte(fd, LCD_Clear, COMMAND);      // clear
+    pulse(0x30);
+    pulse(0x30);
+    pulse(0x30);
+    pulse(0x20);
 
-    std::this_thread::sleep_for(std::chrono::microseconds(2000));
+    send_byte(0x28, COMMAND);
+    send_byte(0x08, COMMAND);
+    send_byte(LCD_Clear, COMMAND);
 
-    send_byte(fd, 0x06, COMMAND);   // entry mode
-    send_byte(fd, 0x0C, COMMAND);   // display ON
+    std::this_thread::sleep_for(
+        std::chrono::microseconds(2000)
+    );
 
-    return fd;
+    send_byte(0x06, COMMAND);
+    send_byte(0x0C, COMMAND);
+
+    return true;
 }
 
+// ----------------------
+// Print
+// ----------------------
 
-// -- LAYOUT --
+void LCD::print(const std::string& text, uint8_t start)
+{
+    send_byte(start, COMMAND);
 
-void Menu_chair(int fd, int temp) {
-    send_byte(fd, LCD_Clear, COMMAND);
-    
-    std::string string_temp = std::to_string(temp);
-
-    lcd_print(fd, string_temp, Linje1+15);
-
-    send_byte(fd, LCD_Degree, DATA);    // degree symbol
-
-    lcd_print(fd,"   [1]     [2]",Linje2);
-
-    lcd_print(fd,"   [3]     [4]",Linje4);
+    for (char c : text)
+    {
+        send_byte(c, DATA);
+    }
 }
 
-int Next_menu_chair(int fd,int chair) {
-    chair += 1;
-    
-    switch (chair) {
+// ----------------------
+// Menu
+// ----------------------
+
+void LCD::Menu_chair(int temp)
+{
+    send_byte(LCD_Clear, COMMAND);
+
+    std::string t = std::to_string(temp);
+
+    print(t, Linje1 + 15);
+    send_byte(LCD_Degree, DATA);
+
+    print(" [1] [2]", Linje2);
+    print(" [3] [4]", Linje4);
+}
+
+int LCD::Next_menu_chair(int chair)
+{
+    chair++;
+
+    switch (chair)
+    {
         case 1:
-            lcd_print(fd,"x",Linje2+4);     // + offset
+            print("x", Linje2 + 4);
             return chair;
-            
+
         case 2:
-            lcd_print(fd,"1",Linje2+4);
-            lcd_print(fd,"x",Linje2+12);
+            print("1", Linje2 + 4);
+            print("x", Linje2 + 12);
             return chair;
-            
+
         case 3:
-            lcd_print(fd,"2",Linje2+12);
-            lcd_print(fd,"x",Linje4+4);
+            print("2", Linje2 + 12);
+            print("x", Linje4 + 4);
             return chair;
-            
+
         case 4:
-            lcd_print(fd,"3",Linje4+4);
-            lcd_print(fd,"x",Linje4+12);
+            print("3", Linje4 + 4);
+            print("x", Linje4 + 12);
             return chair;
+
         case 5:
-            lcd_print(fd,"4",Linje4+12);
-            chair = 0;
-            return chair;
-        }
+            print("4", Linje4 + 12);
+            return 0;
+    }
+
     return chair;
 }
 
-void Menu_State(int fd) {
-    send_byte(fd, LCD_Clear, COMMAND);
+void LCD::Menu_State()
+{
+    send_byte(LCD_Clear, COMMAND);
 
-    lcd_print(fd,"OFF",Linje1);
-
-    lcd_print(fd,"Low",Linje2);
-
-    lcd_print(fd,"Mid",Linje3);
-    
-    lcd_print(fd,"High",Linje4);
-
+    print("OFF",  Linje1);
+    print("Low",  Linje2);
+    print("Mid",  Linje3);
+    print("High", Linje4);
 }
 
-int Next_menu_state(int fd,int state) {
-    state = (state+1)%4;
+int LCD::Next_menu_state(int state)
+{
+    state = (state + 1) % 5;
 
-    Menu_State(fd);
+    Menu_State();
 
-    switch (state) {
+    switch (state)
+    {
         case OFF:
-            lcd_print(fd,"> OFF",Linje1);
-            return state;
-            
-        case LOW:
-            lcd_print(fd,"> Low",Linje2);
-            return state;
-            
-        case MID:
-            lcd_print(fd,"> Mid",Linje3);
-            return state;
-            
-        case HIGH:
-            lcd_print(fd,"> High",Linje4);
+            print("> OFF", Linje1);
             return state;
 
-        }
+        case LOW:
+            print("> Low", Linje2);
+            return state;
+
+        case MID:
+            print("> Mid", Linje3);
+            return state;
+
+        case HIGH:
+            print("> High", Linje4);
+            return state;
+    }
+
     return state;
 }
-
-

@@ -4,126 +4,132 @@
 
 #include <iostream>
 #include <thread>
-#include <unistd.h>
-#include <array>
 #include <chrono>
+#include <signal.h>
+#include <array>
 
+volatile bool running = true;
 
-volatile int temp = 0;
-volatile int old_temp = 0;
-
-std::array<volatile int, 4> chairStates = {1, 1, 1, 1};
-
-constexpr int  BUTTON_NEXT  = 17;
-constexpr int  BUTTON_CLICK = 27;
+void handle_sigint(int)
+{
+    running = false;
+}
 
 int main()
 {
+    std::cout << "\n--- Varmelampe System ---\n";
 
-//-----------------------------------------------------------//
-    // UART init
-    int fd_USB = uart_open(UART_DEVICE, UART_BAUDRATE);
-    if (fd_USB < 0)        return 1;
+    Button button;
+    LCD lcd;
+    ArduinoIF uart;
 
-    // LCD init
-    int fd_LCD = lcd_init();
-    if (fd_LCD < 0) return 1;
+    // INIT
+    if (!uart.init(UART_DEVICE, UART_BAUDRATE))
+    {
+        std::cout << "Uart Failed. |Check usb|\n";
+        return 1;
+        
+    }
 
-    // Button init
-    if (!button_init()) return 1;
-//-----------------------------------------------------------//
-    //menu select chair and state
-    int selectedChair = 0;   // 0 = ingen valgt, 1–4 = stol
-    int selectedState = 0;   // 0–3
+    if (!lcd.init())
+    {
+        std::cout << "LCD Failed. |Check Wires|\n";
+        return 1;
+        
+    }
 
-//-----------------------------------------------------------//
-    //Uart read definition byte
-	int UartResult = Def_Null;
+    if (!button.init())
+    {
+        std::cout << "Button Failed. |Check chip_path|\n";
+        std::cout << "Button path prob not cleaned\n";
+        return 1;
+        
+    }
 
-//-----------------------------------------------------------//
-    //Last button state
-	bool next_old = false;
-	bool click_old = false;
-
-//-----------------------------------------------------------//
-    // Button thread
-    std::thread t(button_run);
-
-//-----------------------------------------------------------//
-    // Startmenu
-    Menu_chair(fd_LCD, temp);
-
-//-----------------------------------------------------------//
+    // BUTTON THREAD
+    std::thread t(&Button::run, &button);
 
 
+    // VAR
+    int temp = 0;
+    
 
-while (true)
-{
-        UartResult = Read_uart(fd_USB);
+    constexpr int BUTTON_NEXT  = 17;
+    constexpr int BUTTON_CLICK = 27;
 
-		if (UartResult == Def_Temp) Menu_chair(fd_LCD, temp);
-		if (UartResult == Def_Sweep) SET_ALL_LED (fd_USB);
+    MenuSelect menu = MenuSelect::Chair;
 
+    int selectedChair = 0;
+    int selectedState = None;
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        bool next_now = button_is_pressed(BUTTON_NEXT);
-        bool click_now = button_is_pressed(BUTTON_CLICK);
+    bool next_old = false;
+    bool click_old = false;
 
-        if (next_now && !next_old)
+    lcd.Menu_chair(temp);
+
+    signal(SIGINT, handle_sigint);
+
+    while (running)
+    {
+        int result = uart.read();
+
+        if (result == Def_Temp)
         {
-			
-            if (menu == MenuSelect::Chair)
-            {
-                selectedChair = Next_menu_chair(fd_LCD, selectedChair);
-            }
-            else if (menu == MenuSelect::State)
-            {
-                selectedState = Next_menu_state(fd_LCD, selectedState);
-            }
-
+            std::cout << "Temp updated\n";
         }
 
+        uart.check_terminal();
 
-        if (click_now && !click_old)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        bool next_now  = button.is_pressed(BUTTON_NEXT);
+        bool click_now = button.is_pressed(BUTTON_CLICK);
+
+        // NEXT
+        if (next_now && !next_old)
         {
             if (menu == MenuSelect::Chair)
+                selectedChair = lcd.Next_menu_chair(selectedChair);
+            else
+                selectedState = lcd.Next_menu_state(selectedState);
+        }
+
+        // CLICK
+        if (click_now && !click_old)
+        {
+            if (menu == MenuSelect::Chair && selectedChair > 0)
             {
-                // Gå til status-menu hvis en stol er valgt
-                if (selectedChair > 0)
-                {
-                    Menu_State(fd_LCD);
-                    menu = MenuSelect::State;
-                }
+                lcd.Menu_State();
+                menu = MenuSelect::State;
             }
-            
-            else if (menu == MenuSelect::State)
+            else if (menu == MenuSelect::State && selectedState > 0)
             {
-
-                if (selectedState > 0){
-
-                // Gem status i array
-                chairStates[selectedChair - 1] = selectedState;
+                std::cout << "  Next      button pressed \n";
+                uart.set_led(selectedChair, selectedState);
                 
-                // Set LED
-				Set_LED(fd_USB,selectedChair,selectedState);
-                
-                // Reset menu
+                std::cout <<'\n';
+                std::cout <<"-----------------------\n";
+                std::cout << "Selected chair:  "   << selectedChair-1  <<'\n';
+                std::cout << "Selected State:  "   << selectedState    <<'\n';
+                std::cout <<"-----------------------\n";
+                std::cout <<'\n';
+
                 selectedChair = 0;
                 selectedState = 0;
                 menu = MenuSelect::Chair;
 
-                send_byte(fd_LCD, LCD_Clear, COMMAND); //Clear
-                Menu_chair(fd_LCD, temp);
-
-                }
+                lcd.Menu_chair(temp);
             }
+        }
 
-        }            
+        next_old  = next_now;
         click_old = click_now;
-		next_old = next_now;
-
     }
-    uart_close(fd_USB);
-    t.join();
-    button_cleanup();
+    
+        // shutdown: stop background thread and join before destructors run
+        button.stop();
+        if (t.joinable())
+            t.join();
+
+    return 0;
 }
