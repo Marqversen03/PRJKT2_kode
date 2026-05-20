@@ -13,9 +13,9 @@ volatile bool ChangeTemp = false;
 std::array<volatile int, 4> chairStates = {1, 1, 1, 1};
 
 
-ArduinoIF::UART() : fd(-1) {}
+ArduinoIF::ArduinoIF() : fd(-1) {}
 
-ArduinoIF::~UART()
+ArduinoIF::~ArduinoIF()
 {
     close();
 }
@@ -27,7 +27,7 @@ bool ArduinoIF::init(const char* device, int baudrate)
 
     if (fd < 0)
     {
-        std::cerr << "Failed to open " << device << "\n";
+        std::cout << "Failed to open Uart \n";
         return false;
     }
 
@@ -64,7 +64,7 @@ int ArduinoIF::read()
             return Def_Null;
 
         c = serialGetchar(fd);
-    } while (c != Start_byte);
+    } while (c != Start_byte); 
 
     while (true)
     {
@@ -98,7 +98,7 @@ int ArduinoIF::data_handle(unsigned char* data_ptr, int length)
             return Def_Temp;
         }
     }
-    else if (data_ptr[0] == Definition_Byte_Sweep)
+    else if (data_ptr[0] == Definition_Byte_Scan)
     {
         if (length < chairStates.size() + 1)
             return Error;
@@ -126,7 +126,7 @@ void ArduinoIF::rotate_motor(int degree)
 void ArduinoIF::scan()
 {
     serialPutchar(fd, Start_byte);
-    serialPutchar(fd, Definition_Byte_Sweep);
+    serialPutchar(fd, Definition_Byte_Scan);
     serialPutchar(fd, END_byte);
 }
 
@@ -148,10 +148,10 @@ void ArduinoIF::set_all_led()
     }
 }
 
-// ---------------- TERMINAL ----------------
 
 void ArduinoIF::check_terminal()
 {
+    //https://stackoverflow.com/questions/48039759/how-to-distinguish-between-escape-and-escape-sequence
     fd_set set;
     struct timeval timeout = {0, 0};
 

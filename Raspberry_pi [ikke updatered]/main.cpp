@@ -26,6 +26,7 @@ int main()
     // INIT
     if (!uart.init(UART_DEVICE, UART_BAUDRATE))
     {
+
         std::cout << "Uart Failed. |Check usb|\n";
         return 1;
         
@@ -124,9 +125,7 @@ int main()
 
         next_old  = next_now;
         click_old = click_now;
-    }
-    
-        // shutdown: stop background thread and join before destructors run
+    }    
         button.stop();
         if (t.joinable())
             t.join();

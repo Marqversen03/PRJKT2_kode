@@ -37,10 +37,10 @@ constexpr int UART_BAUDRATE = 9600;
 #define END_byte   0xBB
 #define DATA_size  10
 
-#define Definition_Byte_Temp   'T'
-#define Definition_Byte_Sweep  'S'
-#define Definition_Byte_Rotate 'R'
-#define Definition_Byte_LED    'V'
+#define Definition_Byte_Temp    'T'
+#define Definition_Byte_Scan    'S'
+#define Definition_Byte_Rotate  'R'
+#define Definition_Byte_LED     'V'
 
 enum DefByte {
     Def_Null = 0,
